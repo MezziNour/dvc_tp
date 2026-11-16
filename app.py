@@ -1,13 +1,12 @@
-
-import mlflow
-import pandas as pd
+import mlflow.pyfunc
+import numpy as np
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Digits Prediction API")
 
-# Load the trained model
+# Load the model downloaded during Docker build
 model = mlflow.pyfunc.load_model("model")
 
 
@@ -21,14 +20,10 @@ class PredictionInput(BaseModel):
 
 @app.post("/predict")
 def predict(data: PredictionInput):
-    # Convert input into a DataFrame
-    columns = [f"pixel_{i}" for i in range(64)]
-    input_data = pd.DataFrame(
-        [data.features],
-        columns=columns
-    )
+    # Convert the 64 pixel values into a NumPy array
+    input_data = np.array([data.features])
 
-    # Make prediction
+    # Predict the digit
     prediction = model.predict(input_data)
 
     return {"prediction": int(prediction[0])}
